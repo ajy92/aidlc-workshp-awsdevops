@@ -1,6 +1,7 @@
 {
   "name": "table-order",
   "private": true,
+  "type": "module",
   "workspaces": ["server", "client"],
   "scripts": {
     "dev": "npm run dev --workspace=server & npm run dev --workspace=client",

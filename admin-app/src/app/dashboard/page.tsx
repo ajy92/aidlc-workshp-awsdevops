@@ -87,7 +87,7 @@ export default function DashboardPage() {
               {/* 시간대별 */}
               <Section title="시간대별 주문">
                 <div className="flex items-end gap-1 h-32">
-                  {sales.byHour.filter(h => h.count > 0 || (h.hour >= 9 && h.hour <= 22)).map(h => (
+                  {sales.byHour.filter(h => h.hour >= 8 && h.hour <= 23).map(h => (
                     <div key={h.hour} className="flex-1 flex flex-col items-center">
                       <div className="bg-blue-400 rounded-t w-full" style={{ height: `${Math.max(4, (h.count / Math.max(...sales.byHour.map(x => x.count), 1)) * 100)}%` }} />
                       <span className="text-[10px] text-gray-400 mt-1">{h.hour}</span>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                               <span className={`text-[10px] transition-transform ${expandedOrder === i ? 'rotate-90' : ''}`}>▶</span>
                               <span>테이블 {det.table_number}</span>
                             </div>
-                            <span>{det.total_amount.toLocaleString()}원 · {new Date(new Date(det.completed_at).getTime() + 9 * 3600000).toISOString().slice(11, 16)}</span>
+                            <span>{det.total_amount.toLocaleString()}원 · {new Date(new Date(det.completed_at + (det.completed_at.includes('Z') || det.completed_at.includes('+') ? '' : 'Z')).getTime() + 9 * 3600000).toISOString().slice(11, 16)}</span>
                           </div>
                           {expandedOrder === i && det.order_items.length > 0 && (
                             <div className="bg-white ml-6 px-3 py-1.5 rounded mb-1 border">

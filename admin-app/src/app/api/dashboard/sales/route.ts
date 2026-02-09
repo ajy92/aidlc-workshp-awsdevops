@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
   const endDate = req.nextUrl.searchParams.get('endDate') || new Date().toISOString().slice(0, 10);
 
   const supabase = getSupabase();
-  const start = `${startDate}T00:00:00`;
-  const end = `${endDate}T23:59:59`;
+  const start = `${startDate}T00:00:00+09:00`;
+  const end = `${endDate}T23:59:59+09:00`;
 
   // 기간 내 완료/아카이브 주문
   const { data: orders } = await supabase
@@ -28,7 +28,11 @@ export async function GET(req: NextRequest) {
   const orderCount = allOrders.length;
   const avgPerOrder = orderCount ? Math.round(totalSales / orderCount) : 0;
 
-  const toKST = (d: string) => new Date(new Date(d).getTime() + 9 * 3600000);
+  const toKSTHour = (d: string) => {
+    // Supabase returns timezone-naive UTC timestamps
+    const utc = d.endsWith('Z') ? new Date(d) : new Date(d + 'Z');
+    return (utc.getUTCHours() + 9) % 24;
+  };
 
   // 테이블별
   const tableMap: Record<number, number> = {};
@@ -49,7 +53,7 @@ export async function GET(req: NextRequest) {
   // 시간대별 (KST)
   const hourMap: Record<number, number> = {};
   allOrders.forEach(o => {
-    const h = toKST(o.created_at).getUTCHours();
+    const h = toKSTHour(o.created_at);
     hourMap[h] = (hourMap[h] || 0) + 1;
   });
   const byHour = Array.from({ length: 24 }, (_, i) => ({ hour: i, count: hourMap[i] || 0 }));

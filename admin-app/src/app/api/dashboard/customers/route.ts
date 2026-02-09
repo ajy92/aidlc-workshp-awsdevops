@@ -3,7 +3,8 @@ import { getSupabase } from '@/lib/supabase';
 import { verifyAdminAuth, unauthorized } from '@/lib/auth';
 
 const toKSTDate = (d: string) => {
-  const kst = new Date(new Date(d).getTime() + 9 * 3600000);
+  const utc = new Date(d + (d.includes('Z') || d.includes('+') ? '' : 'Z'));
+  const kst = new Date(utc.getTime() + 9 * 3600000);
   return kst.toISOString().slice(0, 10);
 };
 

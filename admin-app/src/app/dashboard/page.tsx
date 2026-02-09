@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { getAuth, apiFetch } from '@/lib/client-auth';
 import { SalesData, CustomerData, CustomerDayDetail } from '@/lib/types';
 import Sidebar from '@/components/Sidebar';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function DashboardPage() {
               {/* 테이블별 매출 */}
               <Section title="테이블별 매출">
                 {sales.byTable.map(t => (
-                  <Bar key={t.table_number} label={`테이블 ${t.table_number}`} value={t.total} max={Math.max(...sales.byTable.map(x => x.total))} />
+                  <BarItem key={t.table_number} label={`테이블 ${t.table_number}`} value={t.total} max={Math.max(...sales.byTable.map(x => x.total))} />
                 ))}
               </Section>
 
@@ -86,20 +87,25 @@ export default function DashboardPage() {
 
               {/* 시간대별 */}
               <Section title="시간대별 주문">
-                <div className="flex items-end gap-1 h-32">
-                  {sales.byHour.filter(h => h.hour >= 8 && h.hour <= 23).map(h => (
-                    <div key={h.hour} className="flex-1 flex flex-col items-center">
-                      <div className="bg-blue-400 rounded-t w-full" style={{ height: `${Math.max(4, (h.count / Math.max(...sales.byHour.map(x => x.count), 1)) * 100)}%` }} />
-                      <span className="text-[10px] text-gray-400 mt-1">{h.hour}</span>
-                    </div>
-                  ))}
-                </div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={sales.byHour.filter(h => h.hour >= 8 && h.hour <= 23).map(h => ({ hour: `${h.hour}시`, count: h.count }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                      labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+                      formatter={(value: number | undefined) => [`${value ?? 0}건`, '주문 건수']}
+                    />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </Section>
 
               {/* 카테고리별 */}
               <Section title="카테고리별 매출">
                 {sales.byCategory.map(c => (
-                  <Bar key={c.category} label={c.category} value={c.total} max={Math.max(...sales.byCategory.map(x => x.total))} />
+                  <BarItem key={c.category} label={c.category} value={c.total} max={Math.max(...sales.byCategory.map(x => x.total))} />
                 ))}
               </Section>
             </div>
@@ -186,7 +192,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Bar({ label, value, max }: { label: string; value: number; max: number }) {
+function BarItem({ label, value, max }: { label: string; value: number; max: number }) {
   const pct = max ? (value / max) * 100 : 0;
   return (
     <div className="flex items-center gap-2 text-sm py-1">

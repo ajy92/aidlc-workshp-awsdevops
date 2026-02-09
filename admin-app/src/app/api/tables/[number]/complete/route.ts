@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: { number: str
     store_id: payload.storeId,
     table_number: tableNumber,
     session_id: o.session_id,
-    order_data: { items: o.order_items, status: o.status },
+    order_data: { order_id: o.id, items: o.order_items, status: o.status },
     total_amount: o.total_amount,
   }));
   await supabase.from('order_history').insert(historyRows);

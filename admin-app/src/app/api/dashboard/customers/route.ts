@@ -40,13 +40,20 @@ export async function GET(req: NextRequest) {
     const itemMap: Record<number, { order_id: number; menu_name: string; quantity: number; unit_price: number }[]> = {};
     (items ?? []).forEach(i => { if (!itemMap[i.order_id]) itemMap[i.order_id] = []; itemMap[i.order_id].push(i); });
 
-    const details = dayRows.map(h => ({
-      table_number: h.table_number,
-      session_id: h.session_id,
-      total_amount: h.total_amount,
-      completed_at: h.completed_at,
-      order_items: itemMap[h.order_data?.order_id] || [],
-    }));
+    const details = dayRows.map(h => {
+      // DB에서 order_items 조회 or order_data.items fallback
+      const dbItems = itemMap[h.order_data?.order_id] || [];
+      const fallbackItems = (h.order_data?.items || []).map((i: { menu_name: string; quantity: number; unit_price: number }) => ({
+        menu_name: i.menu_name, quantity: i.quantity, unit_price: i.unit_price,
+      }));
+      return {
+        table_number: h.table_number,
+        session_id: h.session_id,
+        total_amount: h.total_amount,
+        completed_at: h.completed_at,
+        order_items: dbItems.length ? dbItems : fallbackItems,
+      };
+    });
     return NextResponse.json({ date: detailDate, count: details.length, details });
   }
 

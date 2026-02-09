@@ -27,5 +27,9 @@ export type SalesData = {
 };
 export type CustomerData = {
   totalSessions: number; revisitRate: number;
-  byDate: { date: string; sessions: number }[];
+  byDate: { date: string; sessions: number; orders: number; totalAmount: number }[];
+};
+export type CustomerDayDetail = {
+  date: string; count: number;
+  details: { table_number: number; session_id: string; total_amount: number; completed_at: string; order_items: { menu_name: string; quantity: number; unit_price: number }[] }[];
 };

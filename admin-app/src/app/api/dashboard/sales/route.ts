@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
   const orderCount = allOrders.length;
   const avgPerOrder = orderCount ? Math.round(totalSales / orderCount) : 0;
 
+  const toKST = (d: string) => new Date(new Date(d).getTime() + 9 * 3600000);
+
   // 테이블별
   const tableMap: Record<number, number> = {};
   allOrders.forEach(o => { tableMap[o.table_number] = (tableMap[o.table_number] || 0) + o.total_amount; });
@@ -44,10 +46,10 @@ export async function GET(req: NextRequest) {
     .map(([k, v]) => ({ menu_name: k, ...v }))
     .sort((a, b) => b.count - a.count);
 
-  // 시간대별
+  // 시간대별 (KST)
   const hourMap: Record<number, number> = {};
   allOrders.forEach(o => {
-    const h = new Date(o.created_at).getHours();
+    const h = toKST(o.created_at).getUTCHours();
     hourMap[h] = (hourMap[h] || 0) + 1;
   });
   const byHour = Array.from({ length: 24 }, (_, i) => ({ hour: i, count: hourMap[i] || 0 }));

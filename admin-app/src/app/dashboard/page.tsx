@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth, apiFetch } from '@/lib/client-auth';
-import { SalesData, CustomerData } from '@/lib/types';
+import { SalesData, CustomerData, CustomerDayDetail } from '@/lib/types';
 import Sidebar from '@/components/Sidebar';
 
 export default function DashboardPage() {
@@ -13,6 +13,9 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [sales, setSales] = useState<SalesData | null>(null);
   const [customers, setCustomers] = useState<CustomerData | null>(null);
+  const [dayDetail, setDayDetail] = useState<CustomerDayDetail | null>(null);
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
 
   useEffect(() => {
     if (!getAuth()) { router.push('/login'); return; }
@@ -23,6 +26,9 @@ export default function DashboardPage() {
       apiFetch(`/api/dashboard/sales?period=${period}&startDate=${startDate}&endDate=${endDate}`)
         .then(r => r.json()).then(setSales);
     } else {
+      setDayDetail(null);
+      setExpandedDate(null);
+      setExpandedOrder(null);
       apiFetch(`/api/dashboard/customers?startDate=${startDate}&endDate=${endDate}`)
         .then(r => r.json()).then(setCustomers);
     }
@@ -107,14 +113,54 @@ export default function DashboardPage() {
               <Card label="총 방문 세션" value={`${customers.totalSessions}회`} />
               <Card label="재방문율" value={`${customers.revisitRate}%`} />
             </div>
-            <Section title="일별 방문 추이">
+            <Section title="일별 방문 추이 (이용 완료 기준 · KST)">
               {customers.byDate.map(d => (
-                <div key={d.date} className="flex justify-between text-sm py-1">
-                  <span>{d.date}</span><span>{d.sessions}회</span>
+                <div key={d.date}>
+                  <div className="flex justify-between items-center text-sm py-2 border-b cursor-pointer hover:bg-gray-50 px-2 rounded"
+                    onClick={() => {
+                      if (expandedDate === d.date) { setExpandedDate(null); setDayDetail(null); return; }
+                      setExpandedDate(d.date);
+                      apiFetch(`/api/dashboard/customers?startDate=${startDate}&endDate=${endDate}&detailDate=${d.date}`)
+                        .then(r => r.json()).then(setDayDetail);
+                    }}>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs transition-transform ${expandedDate === d.date ? 'rotate-90' : ''}`}>▶</span>
+                      <span className="font-medium">{d.date}</span>
+                    </div>
+                    <span className="text-gray-500">{d.sessions}세션 · {d.orders}건 · {d.totalAmount.toLocaleString()}원</span>
+                  </div>
+                  {expandedDate === d.date && dayDetail && dayDetail.date === d.date && (
+                    <div className="bg-gray-50 px-4 py-2 border-b">
+                      {dayDetail.details.map((det, i) => (
+                        <div key={i}>
+                          <div className="flex justify-between text-sm py-1.5 cursor-pointer hover:bg-gray-100 px-1 rounded text-gray-600"
+                            onClick={(e) => { e.stopPropagation(); setExpandedOrder(expandedOrder === i ? null : i); }}>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] transition-transform ${expandedOrder === i ? 'rotate-90' : ''}`}>▶</span>
+                              <span>테이블 {det.table_number}</span>
+                            </div>
+                            <span>{det.total_amount.toLocaleString()}원 · {new Date(new Date(det.completed_at).getTime() + 9 * 3600000).toISOString().slice(11, 16)}</span>
+                          </div>
+                          {expandedOrder === i && det.order_items.length > 0 && (
+                            <div className="bg-white ml-6 px-3 py-1.5 rounded mb-1 border">
+                              {det.order_items.map((item, j) => (
+                                <div key={j} className="flex justify-between text-xs text-gray-500 py-0.5">
+                                  <span>{item.menu_name} × {item.quantity}</span>
+                                  <span>{(item.quantity * item.unit_price).toLocaleString()}원</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               {customers.byDate.length === 0 && <p className="text-gray-400 text-sm">데이터가 없습니다</p>}
             </Section>
+
+            {/* dayDetail 하단 패널 제거됨 */}
           </div>
         )}
       </main>

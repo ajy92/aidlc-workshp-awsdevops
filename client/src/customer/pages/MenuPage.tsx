@@ -13,7 +13,9 @@ export function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const totalItems = useCart((s) => s.totalItems)
+  const totalItemCount = useCart((s) =>
+    s.items.reduce((sum, item) => sum + item.quantity, 0)
+  )
   const tableNumber = useCustomerAuth((s) => s.tableNumber)
   const navigate = useNavigate()
 
@@ -78,7 +80,7 @@ export function MenuPage() {
       </div>
 
       {/* Floating Cart Button */}
-      {totalItems() > 0 && (
+      {totalItemCount > 0 && (
         <div className="fixed bottom-4 left-0 right-0 px-4">
           <button
             onClick={() => navigate('/cart')}
@@ -86,7 +88,7 @@ export function MenuPage() {
           >
             <span className="font-semibold">장바구니 보기</span>
             <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-bold">
-              {totalItems()}개
+              {totalItemCount}개
             </span>
           </button>
         </div>
